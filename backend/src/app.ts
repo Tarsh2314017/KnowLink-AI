@@ -5,6 +5,8 @@ import healthRoutes from "./routes/health.routes"
 import authRoutes from "./routes/auth.routes"
 import sessionRoutes from "./routes/session.routes";
 
+import sourceRoutes from "./routes/source.routes";
+
 const app = express();
 
 app.use(
@@ -25,5 +27,6 @@ app.get("/", (_req, res) => {
 app.use("/api/health",healthRoutes);
 app.use("/api/auth",authRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/sources", sourceRoutes);
 
 export default app;
