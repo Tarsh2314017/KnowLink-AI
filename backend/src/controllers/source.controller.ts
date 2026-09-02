@@ -5,6 +5,7 @@ import { Source } from "../models/Source";
 import { extractWebContent } from "../services/extraction.service";
 import { validateUrl } from "../services/url.service";
 import { chunkText } from "../services/chunking.service";
+import { generateEmbedding } from "../services/embedding.service";
 
 export const createSource = async (
   req: AuthRequest,
@@ -71,13 +72,21 @@ export const createSource = async (
     }
 
     const chunks=chunkText(extracted.content);
+    const embeddedChunks= [];
+    for(const chunk of chunks){
+      const embedding = await generateEmbedding(chunk);
+      embeddedChunks.push({
+        text: chunk,
+        embedding,
+      });
+    }
     const source = await Source.create({
       sessionId,
       userId: req.userId,
       url: normalizedUrl,
       title: extracted.title,
       content: extracted.content,
-      chunks,
+      chunks: embeddedChunks,
     });
 
     res.status(201).json({

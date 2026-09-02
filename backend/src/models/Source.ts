@@ -1,5 +1,10 @@
 import mongoose, { Document, Schema } from "mongoose";
+// import { text } from "node:stream/consumers";
 
+interface ISourceChunk{
+  text: string;
+  embedding: number[];
+}
 export interface ISource extends Document {
   sessionId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
@@ -9,11 +14,28 @@ export interface ISource extends Document {
 
   content: string;
 
-  chunks: string[];
+  chunks: ISourceChunk[];
 
   createdAt: Date;
   updatedAt: Date;
 }
+
+const sourceChunkSchema= new Schema<ISourceChunk>(
+  {
+    text: {
+      type: String,
+      required: true,
+    },
+    embedding: {
+      type: [Number],
+      required: true,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 
 const sourceSchema = new Schema<ISource>(
   {
@@ -50,7 +72,7 @@ const sourceSchema = new Schema<ISource>(
     },
 
     chunks: {
-      type: [String],
+      type: [sourceChunkSchema],
       default: [],
     },
   },
