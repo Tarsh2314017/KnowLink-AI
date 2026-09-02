@@ -7,6 +7,8 @@ import sessionRoutes from "./routes/session.routes";
 
 import sourceRoutes from "./routes/source.routes";
 
+import chatRoutes from "./routes/chat.routes";
+
 const app = express();
 
 app.use(
@@ -28,5 +30,6 @@ app.use("/api/health",healthRoutes);
 app.use("/api/auth",authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/sources", sourceRoutes);
+app.use("/api/chat",chatRoutes);
 
 export default app;
