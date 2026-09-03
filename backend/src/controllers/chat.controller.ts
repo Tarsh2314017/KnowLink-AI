@@ -1,9 +1,9 @@
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { Session } from "../models/Session";
-import { Source } from "../models/Source";
 import { generateAnswer } from "../services/gemini.service";
 import { Message } from "../models/Message";
+import { retrieveRelevantChunks } from "../services/retrieval.service";
 
 export const askQuestion = async (
   req: AuthRequest,
@@ -40,33 +40,31 @@ export const askQuestion = async (
       });
       return;
     }
-
-    const sources = await Source.find({
+    
+    const relevantChunks = await retrieveRelevantChunks(
       sessionId,
-      userId: req.userId,
-    });
-
-    if (sources.length === 0) {
+      req.userId,
+      question.trim(),
+      5
+    );
+    if (relevantChunks.length === 0) {
       res.status(400).json({
-        success: false,
-        message: "No sources are available in this session",
-      });
-      return;
-    }
-
-    const context = sources
-      .flatMap((source) =>
-        source.chunks.map(
-          (chunk, index) =>
-            `[Source: ${source.title} | Chunk ${index + 1}]\n${chunk}`
-        )
+      success: false,
+      message: "No relevant source content was found",
+    });
+    return;
+  }
+  const context = relevantChunks
+    .map(
+        (chunk, index) =>
+          `[Retrieved Chunk ${index + 1} | Similarity: ${chunk.score.toFixed(4)}]\n${chunk.text}`
       )
       .join("\n\n");
 
-    const answer = await generateAnswer(
-      question.trim(),
-      context
-    );
+  const answer = await generateAnswer(
+    question.trim(),
+    context
+  );
 
     // Save user's question
     await Message.create({

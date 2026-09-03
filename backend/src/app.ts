@@ -9,6 +9,8 @@ import sourceRoutes from "./routes/source.routes";
 
 import chatRoutes from "./routes/chat.routes";
 
+import retrievalRoutes from "./routes/retrieval.routes"
+
 const app = express();
 
 app.use(
@@ -31,5 +33,6 @@ app.use("/api/auth",authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/sources", sourceRoutes);
 app.use("/api/chat",chatRoutes);
+app.use("/api/retrieval",retrievalRoutes);
 
 export default app;
