@@ -1,9 +1,15 @@
 import { Source } from "../models/Source";
 import { generateEmbedding } from "./embedding.service";
 
-interface RetrievedChunk{
+const DEFAULT_TOP_K = 5;
+const DEFAULT_SIMILARITY_THRESHOLD = 0.50;
+
+export interface RetrievedChunk{
     text: String;
     score: number;
+    sourceId: string;
+    sourceTitle: string;
+    sourceUrl: string;
 }
 
 export const cosineSimilarity = (
@@ -51,18 +57,17 @@ export const generateQuestionEmbedding = async (
   return generateEmbedding(cleanedQuestion);
 };
 
+
 export const retrieveRelevantChunks = async (
   sessionId: string,
   userId: string,
   question: string,
-  topK = 5
+  topK = DEFAULT_TOP_K,
+  similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD
 ): Promise<RetrievedChunk[]> => {
   const questionEmbedding = await generateQuestionEmbedding(question);
 
   const sources = await Source.find({
-    _id: {
-      $exists: true,
-    },
     sessionId,
     userId,
   }).lean();
@@ -80,10 +85,15 @@ export const retrieveRelevantChunks = async (
         chunk.embedding
       );
 
-      results.push({
-        text: chunk.text,
-        score,
-      });
+      if (score >= similarityThreshold) {
+        results.push({
+          text: chunk.text,
+          score,
+          sourceId: source._id.toString(),
+          sourceTitle: source.title,
+          sourceUrl: source.url,
+        });
+      }
     }
   }
 

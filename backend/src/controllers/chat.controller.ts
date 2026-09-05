@@ -49,22 +49,27 @@ export const askQuestion = async (
     );
     if (relevantChunks.length === 0) {
       res.status(400).json({
-      success: false,
-      message: "No relevant source content was found",
-    });
-    return;
-  }
-  const context = relevantChunks
+        success: false,
+        message: "No relevant source content was found",
+      });
+      return;
+    }
+    const context = relevantChunks
     .map(
-        (chunk, index) =>
-          `[Retrieved Chunk ${index + 1} | Similarity: ${chunk.score.toFixed(4)}]\n${chunk.text}`
-      )
-      .join("\n\n");
+      (chunk, index) =>
+      `[Retrieved Chunk ${index + 1}]
+      Source: ${chunk.sourceTitle}
+      URL: ${chunk.sourceUrl}
+      Similarity: ${chunk.score.toFixed(4)}
+      Content:
+      ${chunk.text}`
+    )
+    .join("\n\n");
 
-  const answer = await generateAnswer(
-    question.trim(),
-    context
-  );
+    const answer = await generateAnswer(
+      question.trim(),
+      context
+    );
 
     // Save user's question
     await Message.create({
@@ -82,9 +87,24 @@ export const askQuestion = async (
       content: answer,
     });
 
+    const uniqueSources = Array.from(
+      new Map(
+        relevantChunks.map((chunk) => [
+          chunk.sourceId,
+          {
+            sourceId: chunk.sourceId,
+            title: chunk.sourceTitle,
+            url: chunk.sourceUrl,
+            score: Number(chunk.score.toFixed(4)),
+          },
+        ])
+      ).values()
+    );
+
     res.status(200).json({
       success: true,
       answer,
+      sources: uniqueSources,
     });
   } catch (error) {
     console.error("Ask question error:", error);
