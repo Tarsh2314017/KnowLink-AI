@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 
 interface User {
@@ -16,6 +17,7 @@ interface Session {
 }
 
 export default function DashboardPage() {
+  const router=useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -239,8 +241,9 @@ export default function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {sessions.map((session) => (
                 <div
-                  key={session.id}
-                  className="rounded-xl border bg-white p-5 shadow-sm"
+                key={session.id}
+                onClick={() => router.push(`/session/${session.id}`)}
+                className="cursor-pointer rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                 >
                   <h4 className="font-semibold text-gray-900">
                     {session.title}
