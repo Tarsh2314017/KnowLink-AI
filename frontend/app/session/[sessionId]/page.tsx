@@ -31,6 +31,9 @@ export default function SessionPage() {
   const [showAddSource, setShowAddSource] = useState(false);
   const [sourceUrl, setSourceUrl] = useState("");
   const [addingSource, setAddingSource] = useState(false);
+  const [deletingSourceId, setDeletingSourceId] = useState<string | null>(
+  null
+  );
 
   const addSource = async () => {
   if (!sourceUrl.trim()) {
@@ -77,6 +80,41 @@ export default function SessionPage() {
     );
   } finally {
     setAddingSource(false);
+  }
+  };
+
+  const deleteSource = async (sourceId: string) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    router.push("/login");
+    return;
+  }
+
+  setDeletingSourceId(sourceId);
+  setError("");
+
+  try {
+    await apiRequest(`/sources/${sourceId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    setSources((currentSources) =>
+      currentSources.filter((source) => source.id !== sourceId)
+    );
+  } catch (error) {
+    console.error("Delete source error:", error);
+
+    setError(
+      error instanceof Error
+        ? error.message
+        : "Failed to delete source"
+    );
+  } finally {
+    setDeletingSourceId(null);
   }
   };
 
@@ -265,13 +303,25 @@ export default function SessionPage() {
                     key={source.id}
                     className="rounded-lg border p-3"
                   >
-                    <p className="font-medium text-gray-900">
-                      {source.title}
-                    </p>
-                      
-                    <p className="mt-1 truncate text-xs text-gray-500">
-                      {source.url}
-                    </p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900">
+                          {source.title}
+                        </p>
+
+                        <p className="mt-1 truncate text-xs text-gray-500">
+                          {source.url}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => deleteSource(source.id)}
+                        disabled={deletingSourceId === source.id}
+                        className="shrink-0 text-sm font-medium text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deletingSourceId === source.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
