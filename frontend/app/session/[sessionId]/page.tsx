@@ -28,6 +28,58 @@ export default function SessionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [showAddSource, setShowAddSource] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [addingSource, setAddingSource] = useState(false);
+
+  const addSource = async () => {
+  if (!sourceUrl.trim()) {
+    setError("URL is required");
+    return;
+  }
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    router.push("/login");
+    return;
+  }
+
+  setAddingSource(true);
+  setError("");
+
+  try {
+    const data = await apiRequest("/sources", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        sessionId,
+        url: sourceUrl.trim(),
+      }),
+    });
+
+    setSources((currentSources) => [
+      data.source,
+      ...currentSources,
+    ]);
+
+    setSourceUrl("");
+    setShowAddSource(false);
+  } catch (error) {
+    console.error("Add source error:", error);
+
+    setError(
+      error instanceof Error
+        ? error.message
+        : "Failed to add source"
+    );
+  } finally {
+    setAddingSource(false);
+  }
+  };
+
   useEffect(() => {
     const fetchSession = async () => {
       const token = localStorage.getItem("token");
@@ -142,11 +194,65 @@ export default function SessionPage() {
               <h3 className="font-semibold text-gray-900">
                 Sources
               </h3>
+
+              <button 
+                onClick={ ()=> {
+                  setError("");
+                  setShowAddSource(true);
+                }}
+                className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              >
+                + Add Url
+              </button>
             
               <span className="text-sm text-gray-500">
                 {sources.length}
               </span>
             </div>
+
+            {showAddSource && (
+              <div className="mt-4 rounded-lg border p-4">
+                <label
+                  htmlFor="sourceUrl"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Source URL
+                </label>
+
+
+                <input
+                  id="sourceUrl"
+                  type="url"
+                  value={sourceUrl}
+                  onChange={(event) => setSourceUrl(event.target.value)}
+                  placeholder="https://example.com"
+                  autoFocus
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-black"
+                />
+
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={addSource}
+                    disabled={addingSource}
+                    className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {addingSource ? "Adding..." : "Add URL"}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowAddSource(false);
+                      setSourceUrl("");
+                      setError("");
+                    }}
+                    disabled={addingSource}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+               </div>
+             </div>
+            )}
             
             {sources.length === 0 ? (
               <p className="mt-4 text-sm text-gray-500">
