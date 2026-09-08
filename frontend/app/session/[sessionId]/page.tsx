@@ -17,6 +17,12 @@ interface Source {
   url: string;
 }
 
+interface ChatMessage{
+  id?: string;
+  role: "user"| "assistant";
+  content: string;
+}
+
 export default function SessionPage() {
   const params = useParams();
   const router = useRouter();
@@ -25,16 +31,23 @@ export default function SessionPage() {
 
   const [session, setSession] = useState<Session | null>(null);
   const [sources, setSources] = useState<Source[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [showAddSource, setShowAddSource] = useState(false);
   const [sourceUrl, setSourceUrl] = useState("");
   const [addingSource, setAddingSource] = useState(false);
+
   const [deletingSourceId, setDeletingSourceId] = useState<string | null>(
   null
   );
 
+  const [question, setQuestion]=useState("");
+  const [askingQuestion, setAskingQuestion] = useState(false);
+
+  //source add
   const addSource = async () => {
   if (!sourceUrl.trim()) {
     setError("URL is required");
@@ -83,6 +96,7 @@ export default function SessionPage() {
   }
   };
 
+  //Source Delete
   const deleteSource = async (sourceId: string) => {
   const token = localStorage.getItem("token");
 
@@ -117,6 +131,67 @@ export default function SessionPage() {
     setDeletingSourceId(null);
   }
   };
+
+// Ask Question
+  const askQuestion = async () => {
+    if (!question.trim()) {
+      return;
+    }
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    router.push("/login");
+    return;
+  }
+
+  const userQuestion = question.trim();
+
+  setQuestion("");
+  setAskingQuestion(true);
+  setError("");
+
+  setMessages((currentMessages) => [
+    ...currentMessages,
+    {
+      role: "user",
+      content: userQuestion,
+    },
+  ]);
+
+  try {
+    const data = await apiRequest("/chat/ask", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        sessionId,
+        question: userQuestion,
+      }),
+    });
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        role: "assistant",
+        content: data.answer,
+      },
+    ]);
+  } catch (error) {
+    console.error("Ask question error:", error);
+
+    setError(
+      error instanceof Error
+        ? error.message
+        : "Failed to generate answer"
+    );
+  } finally {
+    setAskingQuestion(false);
+  }
+};
+
+
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -333,10 +408,66 @@ export default function SessionPage() {
               AI Research Assistant
             </h3>
 
-            <p className="mt-2 text-sm text-gray-500">
-              Ask questions about your sources here.
-            </p>
-          </div>
+            <div className="mt-6 min-h-[300px] space-y-4">
+              {messages.length === 0 ? (
+                <div className="flex min-h-[250px] items-center justify-center">
+                  <p className="text-sm text-gray-500">
+                    Ask a question about your sources to get started.
+                  </p>
+                </div>
+              ) : (
+                messages.map((message, index) => (
+                  <div
+                    key={message.id ?? `${message.role}-${index}`}
+                    className={
+                    message.role === "user"
+                      ? "ml-auto max-w-[80%] rounded-xl bg-black p-4 text-white"
+                      : "max-w-[80%] rounded-xl bg-gray-100 p-4 text-gray-900"
+                    }
+                  >
+                    <p className="mb-1 text-xs font-semibold uppercase opacity-60">
+                      {message.role === "user" ? "You" : "KnowLink AI"}
+                    </p>
+
+                    <p className="whitespace-pre-wrap text-sm">
+                      {message.content}
+                    </p>
+                  </div>
+                ))
+              )}
+
+              {askingQuestion && (
+                <div className="max-w-[80%] rounded-xl bg-gray-100 p-4 text-sm text-gray-500">
+                  KnowLink AI is thinking...
+                </div>
+              )}
+           </div>
+
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                askQuestion();
+              }}
+              className="mt-6 flex gap-3"
+            >
+              <input
+                type="text"
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder="Ask a question about your sources..."
+                disabled={askingQuestion}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black disabled:bg-gray-100"
+              />
+
+              <button
+                type="submit"
+                disabled={askingQuestion || !question.trim()}
+                className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {askingQuestion ? "Asking..." : "Ask"}
+              </button>
+            </form>
+         </div>
         </div>
       </section>
     </main>
