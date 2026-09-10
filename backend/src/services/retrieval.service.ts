@@ -5,7 +5,7 @@ const DEFAULT_TOP_K = 5;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.50;
 
 export interface RetrievedChunk{
-    text: String;
+    text: string;
     score: number;
     sourceId: string;
     sourceTitle: string;
@@ -75,6 +75,9 @@ export const retrieveRelevantChunks = async (
   const results: RetrievedChunk[] = [];
 
   for (const source of sources) {
+    let maxScore = 0;
+    let matchedChunks = 0;
+
     for (const chunk of source.chunks) {
       if (!chunk.embedding || chunk.embedding.length === 0) {
         continue;
@@ -85,7 +88,11 @@ export const retrieveRelevantChunks = async (
         chunk.embedding
       );
 
+      maxScore = Math.max(maxScore, score);
+
       if (score >= similarityThreshold) {
+        matchedChunks++;
+
         results.push({
           text: chunk.text,
           score,
@@ -95,6 +102,12 @@ export const retrieveRelevantChunks = async (
         });
       }
     }
+
+    console.log(
+      `Source: ${source.title} | Max score: ${maxScore.toFixed(
+        4
+      )} | Matched chunks: ${matchedChunks}`
+    );
   }
 
   results.sort((a, b) => b.score - a.score);
