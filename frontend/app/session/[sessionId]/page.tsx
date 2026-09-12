@@ -203,7 +203,7 @@ export default function SessionPage() {
       }
 
       try {
-        const [sessionData, sourceData] = await Promise.all([
+        const [sessionData, sourceData,chatData] = await Promise.all([
           apiRequest(`/sessions/${sessionId}`, {
             method: "GET",
             headers: {
@@ -217,10 +217,20 @@ export default function SessionPage() {
               Authorization: `Bearer ${token}`,
             },
           }),
+
+          apiRequest( `/chat/${sessionId}`,{
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+
         ]);
         
         setSession(sessionData.session);
         setSources(sourceData.sources);
+        setMessages(chatData.messages);
+      
       } catch (error) {
         console.error("Failed to load session:", error);
         
