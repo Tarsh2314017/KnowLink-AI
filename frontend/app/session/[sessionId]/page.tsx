@@ -17,10 +17,18 @@ interface Source {
   url: string;
 }
 
+interface ChatSource{
+  sourceId: string;
+  title: string;
+  url: string;
+  score: number;
+}
+
 interface ChatMessage{
   id?: string;
   role: "user"| "assistant";
   content: string;
+  sources?: ChatSource[];
 }
 
 export default function SessionPage() {
@@ -176,6 +184,7 @@ export default function SessionPage() {
       {
         role: "assistant",
         content: data.answer,
+        sources: data.sources,
       },
     ]);
   } catch (error) {
@@ -442,6 +451,40 @@ export default function SessionPage() {
                     <p className="whitespace-pre-wrap text-sm">
                       {message.content}
                     </p>
+
+                    {message.role === "assistant" &&
+                      message.sources &&
+                      message.sources.length > 0 && (
+                        <div className="mt-4 border-t pt-3">
+                          <p className="text-xs font-semibold text-gray-700">
+                            Sources
+                          </p>
+
+                          <div className="mt-2 space-y-2">
+                            {message.sources.map((source) => (
+                              <a
+                                key={source.sourceId}
+                                href={source.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block rounded-lg border bg-gray-50 p-2 transition hover:bg-gray-100"
+                              >
+                                <p className="text-sm font-medium text-gray-900">
+                                  {source.title}
+                                </p>
+
+                                <p className="mt-1 truncate text-xs text-gray-500">
+                                  {source.url}
+                                </p>
+
+                                <p className="mt-1 text-xs text-gray-400">
+                                  Similarity: {source.score.toFixed(4)}
+                                </p>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 ))
               )}
