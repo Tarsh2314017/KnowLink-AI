@@ -299,20 +299,36 @@ export default function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {sessions.map((session) => (
                 <div
-                key={session.id}
-                onClick={() => router.push(`/session/${session.id}`)}
-                className="cursor-pointer rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                  key={session.id}
+                  onClick={() => router.push(`/session/${session.id}`)}
+                  className="cursor-pointer rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <h4 className="font-semibold text-gray-900">
-                    {session.title}
-                  </h4>
+                  <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-gray-900">
+                          {session.title}
+                        </h4>
 
-                  <p className="mt-2 text-sm text-gray-500">
-                    Created{" "}
-                    {new Date(
-                      session.createdAt
-                    ).toLocaleDateString()}
-                  </p>
+                        <p className="mt-2 text-sm text-gray-500">
+                          Created{" "}
+                          {new Date(session.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                        event.stopPropagation();
+                        deleteSession(session.id);
+                        }}
+                        disabled={deletingSessionId === session.id}
+                        className="shrink-0 text-sm font-medium text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deletingSessionId === session.id
+                        ? "Deleting..."
+                        : "Delete"}
+                      </button>
+                    </div>
                 </div>
               ))}
             </div>
