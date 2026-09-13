@@ -17,16 +17,16 @@ interface Source {
   url: string;
 }
 
-interface ChatSource{
+interface ChatSource {
   sourceId: string;
   title: string;
   url: string;
   score: number;
 }
 
-interface ChatMessage{
+interface ChatMessage {
   id?: string;
-  role: "user"| "assistant";
+  role: "user" | "assistant";
   content: string;
   sources?: ChatSource[];
 }
@@ -48,160 +48,194 @@ export default function SessionPage() {
   const [sourceUrl, setSourceUrl] = useState("");
   const [addingSource, setAddingSource] = useState(false);
 
-  const [deletingSourceId, setDeletingSourceId] = useState<string | null>(
-  null
-  );
+  const [deletingSourceId, setDeletingSourceId] =
+    useState<string | null>(null);
 
-  const [question, setQuestion]=useState("");
+  const [question, setQuestion] = useState("");
   const [askingQuestion, setAskingQuestion] = useState(false);
 
-  //source add
+  const [clearingChat, setClearingChat] = useState(false);
+
+  // Add Source
   const addSource = async () => {
-  if (!sourceUrl.trim()) {
-    setError("URL is required");
-    return;
-  }
+    if (!sourceUrl.trim()) {
+      setError("URL is required");
+      return;
+    }
 
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  if (!token) {
-    router.push("/login");
-    return;
-  }
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
-  setAddingSource(true);
-  setError("");
+    setAddingSource(true);
+    setError("");
 
-  try {
-    const data = await apiRequest("/sources", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        sessionId,
-        url: sourceUrl.trim(),
-      }),
-    });
+    try {
+      const data = await apiRequest("/sources", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          sessionId,
+          url: sourceUrl.trim(),
+        }),
+      });
 
-    setSources((currentSources) => [
-      data.source,
-      ...currentSources,
-    ]);
+      setSources((currentSources) => [
+        data.source,
+        ...currentSources,
+      ]);
 
-    setSourceUrl("");
-    setShowAddSource(false);
-  } catch (error) {
-    console.error("Add source error:", error);
+      setSourceUrl("");
+      setShowAddSource(false);
+    } catch (error) {
+      console.error("Add source error:", error);
 
-    setError(
-      error instanceof Error
-        ? error.message
-        : "Failed to add source"
-    );
-  } finally {
-    setAddingSource(false);
-  }
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to add source"
+      );
+    } finally {
+      setAddingSource(false);
+    }
   };
 
-  //Source Delete
+  // Delete Source
   const deleteSource = async (sourceId: string) => {
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  if (!token) {
-    router.push("/login");
-    return;
-  }
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
-  setDeletingSourceId(sourceId);
-  setError("");
+    setDeletingSourceId(sourceId);
+    setError("");
 
-  try {
-    await apiRequest(`/sources/${sourceId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      await apiRequest(`/sources/${sourceId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    setSources((currentSources) =>
-      currentSources.filter((source) => source.id !== sourceId)
-    );
-  } catch (error) {
-    console.error("Delete source error:", error);
+      setSources((currentSources) =>
+        currentSources.filter((source) => source.id !== sourceId)
+      );
+    } catch (error) {
+      console.error("Delete source error:", error);
 
-    setError(
-      error instanceof Error
-        ? error.message
-        : "Failed to delete source"
-    );
-  } finally {
-    setDeletingSourceId(null);
-  }
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete source"
+      );
+    } finally {
+      setDeletingSourceId(null);
+    }
   };
 
-// Ask Question
+  // Ask Question
   const askQuestion = async () => {
     if (!question.trim()) {
       return;
     }
 
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  if (!token) {
-    router.push("/login");
-    return;
-  }
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
-  const userQuestion = question.trim();
+    const userQuestion = question.trim();
 
-  setQuestion("");
-  setAskingQuestion(true);
-  setError("");
-
-  setMessages((currentMessages) => [
-    ...currentMessages,
-    {
-      role: "user",
-      content: userQuestion,
-    },
-  ]);
-
-  try {
-    const data = await apiRequest("/chat/ask", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        sessionId,
-        question: userQuestion,
-      }),
-    });
+    setQuestion("");
+    setAskingQuestion(true);
+    setError("");
 
     setMessages((currentMessages) => [
       ...currentMessages,
       {
-        role: "assistant",
-        content: data.answer,
-        sources: data.sources,
+        role: "user",
+        content: userQuestion,
       },
     ]);
-  } catch (error) {
-    console.error("Ask question error:", error);
 
-    setError(
-      error instanceof Error
-        ? error.message
-        : "Failed to generate answer"
-    );
-  } finally {
-    setAskingQuestion(false);
-  }
-};
+    try {
+      const data = await apiRequest("/chat/ask", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          sessionId,
+          question: userQuestion,
+        }),
+      });
 
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          role: "assistant",
+          content: data.answer,
+          sources: data.sources,
+        },
+      ]);
+    } catch (error) {
+      console.error("Ask question error:", error);
 
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate answer"
+      );
+    } finally {
+      setAskingQuestion(false);
+    }
+  };
 
+  // Clear Chat
+  const clearChat = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    setClearingChat(true);
+    setError("");
+
+    try {
+      await apiRequest(`/chat/${sessionId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setMessages([]);
+    } catch (error) {
+      console.error("Clear chat error:", error);
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to clear chat"
+      );
+    } finally {
+      setClearingChat(false);
+    }
+  };
+
+  // Load Session, Sources and Chat History
   useEffect(() => {
     const fetchSession = async () => {
       const token = localStorage.getItem("token");
@@ -212,43 +246,42 @@ export default function SessionPage() {
       }
 
       try {
-        const [sessionData, sourceData,chatData] = await Promise.all([
-          apiRequest(`/sessions/${sessionId}`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-          
-          apiRequest(`/sources/session/${sessionId}`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
+        const [sessionData, sourceData, chatData] =
+          await Promise.all([
+            apiRequest(`/sessions/${sessionId}`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }),
 
-          apiRequest( `/chat/${sessionId}`,{
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
+            apiRequest(`/sources/session/${sessionId}`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }),
 
-        ]);
-        
+            apiRequest(`/chat/${sessionId}`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }),
+          ]);
+
         setSession(sessionData.session);
         setSources(sourceData.sources);
         setMessages(chatData.messages);
-      
       } catch (error) {
         console.error("Failed to load session:", error);
-        
+
         setError(
           error instanceof Error
-          ? error.message
-          : "Failed to load session"
+            ? error.message
+            : "Failed to load session"
         );
-      } finally{
+      } finally {
         setLoading(false);
       }
     };
@@ -289,6 +322,7 @@ export default function SessionPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
+      {/* Header */}
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div>
@@ -311,6 +345,7 @@ export default function SessionPage() {
       </header>
 
       <section className="mx-auto max-w-6xl px-6 py-10">
+        {/* Session Information */}
         <h2 className="text-3xl font-bold text-gray-900">
           {session.title}
         </h2>
@@ -320,28 +355,39 @@ export default function SessionPage() {
           {new Date(session.createdAt).toLocaleDateString()}
         </p>
 
+        {/* Error */}
+        {error && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
         <div className="mt-8 grid gap-6 md:grid-cols-3">
+          {/* Sources */}
           <div className="rounded-xl border bg-white p-6">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">
                 Sources
               </h3>
 
-              <button 
-                onClick={ ()=> {
-                  setError("");
-                  setShowAddSource(true);
-                }}
-                className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
-              >
-                + Add Url
-              </button>
-            
-              <span className="text-sm text-gray-500">
-                {sources.length}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-500">
+                  {sources.length}
+                </span>
+
+                <button
+                  onClick={() => {
+                    setError("");
+                    setShowAddSource(true);
+                  }}
+                  className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                >
+                  + Add URL
+                </button>
+              </div>
             </div>
 
+            {/* Add Source Form */}
             {showAddSource && (
               <div className="mt-4 rounded-lg border p-4">
                 <label
@@ -351,12 +397,13 @@ export default function SessionPage() {
                   Source URL
                 </label>
 
-
                 <input
                   id="sourceUrl"
                   type="url"
                   value={sourceUrl}
-                  onChange={(event) => setSourceUrl(event.target.value)}
+                  onChange={(event) =>
+                    setSourceUrl(event.target.value)
+                  }
                   placeholder="https://example.com"
                   autoFocus
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-black"
@@ -382,10 +429,11 @@ export default function SessionPage() {
                   >
                     Cancel
                   </button>
-               </div>
-             </div>
+                </div>
+              </div>
             )}
-            
+
+            {/* Source List */}
             {sources.length === 0 ? (
               <p className="mt-4 text-sm text-gray-500">
                 No sources added yet.
@@ -409,11 +457,17 @@ export default function SessionPage() {
                       </div>
 
                       <button
-                        onClick={() => deleteSource(source.id)}
-                        disabled={deletingSourceId === source.id}
+                        onClick={() =>
+                          deleteSource(source.id)
+                        }
+                        disabled={
+                          deletingSourceId === source.id
+                        }
                         className="shrink-0 text-sm font-medium text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {deletingSourceId === source.id ? "Deleting..." : "Delete"}
+                        {deletingSourceId === source.id
+                          ? "Deleting..."
+                          : "Delete"}
                       </button>
                     </div>
                   </div>
@@ -422,36 +476,61 @@ export default function SessionPage() {
             )}
           </div>
 
+          {/* AI Chat */}
           <div className="rounded-xl border bg-white p-6 md:col-span-2">
-            <h3 className="font-semibold text-gray-900">
-              AI Research Assistant
-            </h3>
+            {/* Chat Header */}
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">
+                AI Research Assistant
+              </h3>
 
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  disabled={clearingChat}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {clearingChat
+                    ? "Clearing..."
+                    : "Clear Chat"}
+                </button>
+              )}
+            </div>
+
+            {/* Chat Messages */}
             <div className="mt-6 min-h-[300px] space-y-4">
               {messages.length === 0 ? (
                 <div className="flex min-h-[250px] items-center justify-center">
                   <p className="text-sm text-gray-500">
-                    Ask a question about your sources to get started.
+                    Ask a question about your sources to get
+                    started.
                   </p>
                 </div>
               ) : (
                 messages.map((message, index) => (
                   <div
-                    key={message.id ?? `${message.role}-${index}`}
+                    key={
+                      message.id ??
+                      `${message.role}-${index}`
+                    }
                     className={
-                    message.role === "user"
-                      ? "ml-auto max-w-[80%] rounded-xl bg-black p-4 text-white"
-                      : "max-w-[80%] rounded-xl bg-gray-100 p-4 text-gray-900"
+                      message.role === "user"
+                        ? "ml-auto max-w-[80%] rounded-xl bg-black p-4 text-white"
+                        : "max-w-[80%] rounded-xl bg-gray-100 p-4 text-gray-900"
                     }
                   >
                     <p className="mb-1 text-xs font-semibold uppercase opacity-60">
-                      {message.role === "user" ? "You" : "KnowLink AI"}
+                      {message.role === "user"
+                        ? "You"
+                        : "KnowLink AI"}
                     </p>
 
                     <p className="whitespace-pre-wrap text-sm">
                       {message.content}
                     </p>
 
+                    {/* Source Citations */}
                     {message.role === "assistant" &&
                       message.sources &&
                       message.sources.length > 0 && (
@@ -461,27 +540,30 @@ export default function SessionPage() {
                           </p>
 
                           <div className="mt-2 space-y-2">
-                            {message.sources.map((source) => (
-                              <a
-                                key={source.sourceId}
-                                href={source.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block rounded-lg border bg-gray-50 p-2 transition hover:bg-gray-100"
-                              >
-                                <p className="text-sm font-medium text-gray-900">
-                                  {source.title}
-                                </p>
+                            {message.sources.map(
+                              (source) => (
+                                <a
+                                  key={source.sourceId}
+                                  href={source.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block rounded-lg border bg-gray-50 p-2 transition hover:bg-gray-100"
+                                >
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {source.title}
+                                  </p>
 
-                                <p className="mt-1 truncate text-xs text-gray-500">
-                                  {source.url}
-                                </p>
+                                  <p className="mt-1 truncate text-xs text-gray-500">
+                                    {source.url}
+                                  </p>
 
-                                <p className="mt-1 text-xs text-gray-400">
-                                  Similarity: {source.score.toFixed(4)}
-                                </p>
-                              </a>
-                            ))}
+                                  <p className="mt-1 text-xs text-gray-400">
+                                    Similarity:{" "}
+                                    {source.score.toFixed(4)}
+                                  </p>
+                                </a>
+                              )
+                            )}
                           </div>
                         </div>
                       )}
@@ -489,13 +571,15 @@ export default function SessionPage() {
                 ))
               )}
 
+              {/* Thinking Indicator */}
               {askingQuestion && (
                 <div className="max-w-[80%] rounded-xl bg-gray-100 p-4 text-sm text-gray-500">
                   KnowLink AI is thinking...
                 </div>
               )}
-           </div>
+            </div>
 
+            {/* Question Form */}
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -506,7 +590,9 @@ export default function SessionPage() {
               <input
                 type="text"
                 value={question}
-                onChange={(event) => setQuestion(event.target.value)}
+                onChange={(event) =>
+                  setQuestion(event.target.value)
+                }
                 placeholder="Ask a question about your sources..."
                 disabled={askingQuestion}
                 className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black disabled:bg-gray-100"
@@ -514,13 +600,15 @@ export default function SessionPage() {
 
               <button
                 type="submit"
-                disabled={askingQuestion || !question.trim()}
+                disabled={
+                  askingQuestion || !question.trim()
+                }
                 className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {askingQuestion ? "Asking..." : "Ask"}
               </button>
             </form>
-         </div>
+          </div>
         </div>
       </section>
     </main>
