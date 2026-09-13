@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const router=useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,6 +28,11 @@ export default function DashboardPage() {
   const [creatingSession, setCreatingSession] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [sessionTitle, setSessionTitle] = useState("");
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
 
   const createSession = async () => {
     if (!sessionTitle.trim()) {
@@ -72,6 +78,48 @@ export default function DashboardPage() {
       );
     } finally {
       setCreatingSession(false);
+    }
+  };
+  const deleteSession = async (sessionId: string) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this session?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingSessionId(sessionId);
+    setError("");
+
+    try {
+      await apiRequest(`/sessions/${sessionId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setSessions((currentSessions) =>
+        currentSessions.filter((session) => session.id !== sessionId)
+      );
+    } catch (error) {
+      console.error("Delete session error:", error);
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete session"
+      );
+    } finally {
+      setDeletingSessionId(null);
     }
   };
 
@@ -137,14 +185,24 @@ export default function DashboardPage() {
           </h1>
 
           {user && (
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user.name}
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">
+                  {user.name}
+                </p>
 
-              <p className="text-xs text-gray-500">
-                {user.email}
-              </p>
+                <p className="text-xs text-gray-500">
+                  {user.email}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Logout
+              </button>
             </div>
           )}
         </div>
