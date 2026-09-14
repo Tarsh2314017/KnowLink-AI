@@ -3,11 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
-interface User {
-  name: string;
-  email: string;
-}
 
 interface Session {
   id: string;
@@ -18,7 +15,9 @@ interface Session {
 
 export default function DashboardPage() {
   const router=useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  
+  const { user, token, logout, loading: authLoading } = useAuth();
+
   const [sessions, setSessions] = useState<Session[]>([]);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,10 +28,7 @@ export default function DashboardPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [sessionTitle, setSessionTitle] = useState("");
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
-  };
+  
 
   const createSession = async () => {
     if (!sessionTitle.trim()) {
@@ -124,51 +120,44 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      const token = localStorage.getItem("token");
+  if (authLoading) {
+    return;
+  }
 
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
+  if (!token) {
+    router.push("/login");
+    return;
+  }
 
-      try {
-        const [userData, sessionData] = await Promise.all([
-          apiRequest("/auth/me", {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
+  const fetchSessions = async () => {
+    try {
+      const sessionData = await apiRequest("/sessions", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-          apiRequest("/sessions", {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-        ]);
+      setSessions(sessionData.sessions);
+    } catch (error) {
+      console.error("Dashboard error:", error);
 
-        setUser(userData.user);
-        setSessions(sessionData.sessions);
-      } catch (error) {
-        console.error("Dashboard error:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load dashboard"
+      );
+    } finally {
+      setLoading(false);
+      setSessionsLoading(false);
+    }
+  };
 
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError("Failed to load dashboard");
-        }
-      } finally {
-        setLoading(false);
-        setSessionsLoading(false);
-      }
-    };
+  fetchSessions();
+}, [authLoading, token, router]);
 
-    fetchDashboardData();
-  }, []);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p className="text-gray-600">Loading...</p>

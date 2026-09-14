@@ -1,11 +1,14 @@
 "use client";
 
+import { useAuth } from "@/context/AuthContext";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
+
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,9 +31,9 @@ export default function LoginPage() {
         }),
       });
 
-      localStorage.setItem("token", data.token);
-
+      login(data.token, data.user);
       router.push("/dashboard");
+      
     } catch (error) {
       setError(
         error instanceof Error

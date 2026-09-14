@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 interface Session {
   id: string;
@@ -34,6 +35,8 @@ interface ChatMessage {
 export default function SessionPage() {
   const params = useParams();
   const router = useRouter();
+
+  const { token, loading: authLoading } = useAuth();
 
   const sessionId = params.sessionId as string;
 
@@ -237,13 +240,14 @@ export default function SessionPage() {
 
   // Load Session, Sources and Chat History
   useEffect(() => {
+    if(authLoading){ 
+      return; 
+    }
+    if(!token){
+      router.push("/login");
+      return;
+    }
     const fetchSession = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        router.push("/login");
-        return;
-      }
 
       try {
         const [sessionData, sourceData, chatData] =
@@ -287,7 +291,7 @@ export default function SessionPage() {
     };
 
     fetchSession();
-  }, [sessionId, router]);
+  }, [sessionId, router, token, authLoading]);
 
   if (loading) {
     return (
