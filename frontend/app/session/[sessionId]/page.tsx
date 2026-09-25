@@ -66,7 +66,7 @@ export default function SessionPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
+
 
     if (!token) {
       router.push("/login");
@@ -110,7 +110,6 @@ export default function SessionPage() {
 
   // Delete Source
   const deleteSource = async (sourceId: string) => {
-    const token = localStorage.getItem("token");
 
     if (!token) {
       router.push("/login");
@@ -150,7 +149,6 @@ export default function SessionPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
 
     if (!token) {
       router.push("/login");
@@ -206,7 +204,6 @@ export default function SessionPage() {
 
   // Clear Chat
   const clearChat = async () => {
-    const token = localStorage.getItem("token");
 
     if (!token) {
       router.push("/login");
