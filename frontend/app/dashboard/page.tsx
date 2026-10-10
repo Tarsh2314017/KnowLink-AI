@@ -36,7 +36,6 @@ export default function DashboardPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
 
     if (!token) {
       window.location.href = "/login";
@@ -49,9 +48,7 @@ export default function DashboardPage() {
     try {
       const data = await apiRequest("/sessions", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        token,
         body: JSON.stringify({
           title: sessionTitle.trim(),
         }),
@@ -77,7 +74,6 @@ export default function DashboardPage() {
     }
   };
   const deleteSession = async (sessionId: string) => {
-    const token = localStorage.getItem("token");
 
     if (!token) {
       router.push("/login");
@@ -98,9 +94,7 @@ export default function DashboardPage() {
     try {
       await apiRequest(`/sessions/${sessionId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        token,
       });
 
       setSessions((currentSessions) =>
@@ -133,9 +127,7 @@ export default function DashboardPage() {
     try {
       const sessionData = await apiRequest("/sessions", {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        token,
       });
 
       setSessions(sessionData.sessions);
@@ -159,8 +151,14 @@ export default function DashboardPage() {
 
   if (loading || authLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+      <main className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900">
+            <p className="mt-4 text-sm text-gray-600">
+              Loading your Workspace...
+            </p>
+          </div>
+        </div>
       </main>
     );
   }
@@ -210,8 +208,14 @@ export default function DashboardPage() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600">
-            {error}
+          <div 
+          role="alert"
+          className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4"
+          >
+            <p className="text-sm font-semibold text-red-700">
+              Something went wrong
+            </p>
+            <p className="mt-1 text-sm text-red-600">{error}</p>
           </div>
         )}
 
@@ -275,14 +279,36 @@ export default function DashboardPage() {
           </h3>
 
           {sessionsLoading ? (
-            <p className="text-gray-600">
-              Loading sessions...
-            </p>
-          ) : sessions.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
-              <p className="text-gray-600">
-                You don't have any research sessions yet.
+            <div className="rounded-xl border bg-white p-6 text-center shadow-sm">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900" />
+              <p className="mt-3 text-sm text-gray-500">
+                Loading sessions...
               </p>
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center sm:p-10">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-2xl">
+                📚
+              </div>
+
+              <h4 className="mt-4 text-lg font-semibold text-gray-900">
+                No research sessions yet
+              </h4>
+
+              <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
+                Create your first research session and start adding sources to explore them with AI.
+              </p>
+
+              <button
+                type="button"
+                onClick={()=>{
+                  setError("");
+                  setShowCreateForm(true);
+                }}
+                className="mt-5 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+              >
+                Create your first session
+              </button>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

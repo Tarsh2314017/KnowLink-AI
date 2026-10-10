@@ -79,9 +79,7 @@ export default function SessionPage() {
     try {
       const data = await apiRequest("/sources", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        token,
         body: JSON.stringify({
           sessionId,
           url: sourceUrl.trim(),
@@ -122,9 +120,7 @@ export default function SessionPage() {
     try {
       await apiRequest(`/sources/${sourceId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        token,
       });
 
       setSources((currentSources) =>
@@ -172,9 +168,7 @@ export default function SessionPage() {
     try {
       const data = await apiRequest("/chat/ask", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        token,
         body: JSON.stringify({
           sessionId,
           question: userQuestion,
@@ -216,9 +210,7 @@ export default function SessionPage() {
     try {
       await apiRequest(`/chat/${sessionId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        token,
       });
 
       setMessages([]);
@@ -251,23 +243,17 @@ export default function SessionPage() {
           await Promise.all([
             apiRequest(`/sessions/${sessionId}`, {
               method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+              token,
             }),
 
             apiRequest(`/sources/session/${sessionId}`, {
               method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+              token,
             }),
 
             apiRequest(`/chat/${sessionId}`, {
               method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+              token,
             }),
           ]);
 
