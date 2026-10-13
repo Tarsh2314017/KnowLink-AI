@@ -65,6 +65,8 @@ export default function SessionPage() {
 
   const askingQuestionRef = useRef(false);
 
+  const [lastFailedQuestion, setLastFailedQuestion] = useState("");
+
   // Add Source
   const addSource = async () => {
     if (!sourceUrl.trim()) {
@@ -191,8 +193,12 @@ export default function SessionPage() {
           sources: data.sources,
         },
       ]);
+      setLastFailedQuestion("");
+
     } catch (error) {
       console.error("Ask question error:", error);
+
+      setLastFailedQuestion(userQuestion);
 
       setError(
         error instanceof Error
@@ -301,7 +307,7 @@ export default function SessionPage() {
     );
   }
 
-  if (error || !session) {
+  if (!session) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="text-center">
@@ -361,8 +367,34 @@ export default function SessionPage() {
 
         {/* Error */}
         {error && (
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+          <div
+            role="alert"
+            className="mt-4 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+          >
+            <div className="min-w-0">
+              <p className="font-semibold">Something went wrong</p>
+              <p className="mt-1 wrap-break-word">{error}</p>
+            </div>
+            {lastFailedQuestion && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuestion(lastFailedQuestion);
+                  setError("");
+                }}
+                className="mt-3 rounded-md bg-red-100 px-3 py-2 font-medium hover:bg-red-200"
+              >
+                Retry question
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setError("")}
+              className="shrink-0 rounded px-2 py-1 font-medium hover:bg-red-100"
+              aria-label="Dismiss error"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
@@ -416,7 +448,7 @@ export default function SessionPage() {
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={addSource}
-                    disabled={addingSource}
+                    disabled={addingSource || !sourceUrl.trim()}
                     className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {addingSource ? "Adding..." : "Add URL"}
@@ -503,9 +535,9 @@ export default function SessionPage() {
             </div>
 
             {/* Chat Messages */}
-            <div className="mt-6 min-h-[75] space-y-4">
+            <div className="mt-6 min-h-75 space-y-4">
               {messages.length === 0 ? (
-                <div className="flex min-h-[62.5] items-center justify-center">
+                <div className="flex min-h-50 items-center justify-center">
                   <p className="text-sm text-gray-500">
                     Ask a question about your sources to get
                     started.
@@ -580,14 +612,19 @@ export default function SessionPage() {
                   </div>
                 ))
               )}
-              <div ref={messagesEndRef} />
-
-              {/* Thinking Indicator */}
+              
               {askingQuestion && (
-                <div className="max-w-[80%] rounded-xl bg-gray-100 p-4 text-sm text-gray-500">
-                  KnowLink AI is thinking...
+                <div className="flex items-center gap-3 rounded-xl bg-gray-100 p-4 text-sm text-gray-600">
+                  <div className="flex gap-1">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-500 [animation-delay:-0.3s]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-500 [animation-delay:-0.15s]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-500" />
+                  </div>
+                  <span>KnowLink AI is thinking...</span>
                 </div>
               )}
+
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Question Form */}
@@ -598,17 +635,27 @@ export default function SessionPage() {
               }}
               className="mt-6 flex flex-col gap-2 sm:flex-row sm:gap-3"
             >
-              <input
-                type="text"
+              
+              <textarea
                 value={question}
-                onChange={(event) =>
-                  setQuestion(event.target.value)
-                }
+                onChange={(event) => setQuestion(event.target.value)}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "Enter" &&
+                    !event.shiftKey &&
+                    !event.nativeEvent.isComposing
+                  ) {
+                    event.preventDefault();
+                    if (question.trim() && !askingQuestion) {
+                      askQuestion();
+                    }
+                  }
+                }}
                 placeholder="Ask a question about your sources..."
                 disabled={askingQuestion}
-                className="min-w-0 w-full flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black disabled:bg-gray-100"
+                rows={2}
+                className="min-w-0 w-full flex-1 resize-y rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black disabled:bg-gray-100"
               />
-
               <button
                 type="submit"
                 disabled={
@@ -616,7 +663,7 @@ export default function SessionPage() {
                 }
                 className="w-full rounded-lg bg-black px-5 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
-                {askingQuestion ? "Asking..." : "Ask"}
+                {askingQuestion ? "Generating..." : "Ask"}
               </button>
             </form>
           </div>
