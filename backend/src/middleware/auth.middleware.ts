@@ -33,9 +33,19 @@ export const protect = (
       return;
     }
 
-    const decoded = jwt.verify(token, secret) as {
-      userId: string;
-    };
+    const decoded = jwt.verify(token, secret);
+    
+    if (
+      typeof decoded === "string" ||
+      typeof decoded.userId !== "string" ||
+      !decoded.userId.trim()
+    ) {
+      res.status(401).json({
+        success: false,
+        message: "Invalid token payload",
+      });
+      return;
+    }
 
     req.userId = decoded.userId;
 

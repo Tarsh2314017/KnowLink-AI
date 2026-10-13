@@ -11,15 +11,50 @@ export const register = async (
   try {
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (
+      typeof name !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !name.trim() ||
+      !email.trim() ||
+      !password
+    ) {
       res.status(400).json({
         success: false,
-        message: "Name, email and password are required",
+        message: "Valid name, email and password are required",
       });
       return;
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    if (name.trim().length < 2 || name.trim().length > 50) {
+      res.status(400).json({
+        success: false,
+        message: "Name must be between 2 and 50 characters",
+      });
+      return;
+    }
+
+    if (password.length < 6 || password.length > 72) {
+      res.status(400).json({
+        success: false,
+        message: "Password must be between 6 and 72 characters",
+      });
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (
+      normalizedEmail.length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      });
+      return;
+    }
+
 
     const existingUser = await User.findOne({
       email: normalizedEmail,
@@ -66,10 +101,17 @@ export const login = async (
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !email.trim() ||
+      !password ||
+      email.trim().length > 254 ||
+      password.length > 72
+    ) {
       res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: "Valid email and password are required",
       });
       return;
     }
