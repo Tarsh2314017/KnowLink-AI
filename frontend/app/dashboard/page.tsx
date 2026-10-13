@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import Button from "@/components/ui/Button";
 
 
 interface Session {
@@ -183,13 +184,16 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <button
+              <Button
                 type="button"
-                onClick={logout}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                variant="secondary"
+                onClick={()=>{
+                  logout();
+                  router.push("/login");
+                }}
               >
                 Logout
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -220,15 +224,16 @@ export default function DashboardPage() {
         )}
 
         <div className="mb-8">
-          <button
-            className="rounded-lg bg-black px-5 py-3 font-medium text-white hover:bg-gray-800"
+          <Button
+            type="button"
             onClick={() => {
               setError("");
               setShowCreateForm(true);
             }}
+            className="px-5 py-3"
           >
             + Create Research Session
-          </button>
+          </Button>
 
           {showCreateForm && (
             <div className="mt-4 max-w-md rounded-xl border bg-white p-5 shadow-sm">

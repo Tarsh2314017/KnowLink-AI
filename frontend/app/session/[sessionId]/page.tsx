@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Session {
   id: string;
@@ -486,9 +488,9 @@ export default function SessionPage() {
             </div>
 
             {/* Chat Messages */}
-            <div className="mt-6 min-h-[300px] space-y-4">
+            <div className="mt-6 min-h-[75] space-y-4">
               {messages.length === 0 ? (
-                <div className="flex min-h-[250px] items-center justify-center">
+                <div className="flex min-h-[62.5] items-center justify-center">
                   <p className="text-sm text-gray-500">
                     Ask a question about your sources to get
                     started.
@@ -513,14 +515,20 @@ export default function SessionPage() {
                         : "KnowLink AI"}
                     </p>
 
-                    <p className="whitespace-pre-wrap text-sm">
-                      {message.content}
-                    </p>
+                    {message.role==="assistant"?(
+                      <div className="prose prose-sm max-w-none wrap-break-word prose-headings:font-semibold prose-a:text-blue-600 prose-pre:overflow-x-auto prose-pre:rounded-lg prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:before:content-none prose-code:after:content-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ):(
+                      <div className="whitespace-pre-wrap wrap-break-word text-sm">
+                        {message.content}
+                      </div>
+                    )}
 
                     {/* Source Citations */}
-                    {message.role === "assistant" &&
-                      message.sources &&
-                      message.sources.length > 0 && (
+                    {message.role === "assistant" && message.sources && message.sources.length > 0 && (
                         <div className="mt-4 border-t pt-3">
                           <p className="text-xs font-semibold text-gray-700">
                             Sources
