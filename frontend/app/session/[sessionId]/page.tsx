@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -46,6 +46,8 @@ export default function SessionPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -60,6 +62,8 @@ export default function SessionPage() {
   const [askingQuestion, setAskingQuestion] = useState(false);
 
   const [clearingChat, setClearingChat] = useState(false);
+
+  const askingQuestionRef = useRef(false);
 
   // Add Source
   const addSource = async () => {
@@ -143,7 +147,7 @@ export default function SessionPage() {
 
   // Ask Question
   const askQuestion = async () => {
-    if (!question.trim()) {
+    if (!question.trim() || askingQuestionRef.current || askingQuestion) {
       return;
     }
 
@@ -154,6 +158,8 @@ export default function SessionPage() {
     }
 
     const userQuestion = question.trim();
+
+    askingQuestionRef.current=true;
 
     setQuestion("");
     setAskingQuestion(true);
@@ -194,6 +200,7 @@ export default function SessionPage() {
           : "Failed to generate answer"
       );
     } finally {
+      askingQuestionRef.current=false;
       setAskingQuestion(false);
     }
   };
@@ -278,6 +285,14 @@ export default function SessionPage() {
     fetchSession();
   }, [sessionId, router, token, authLoading]);
 
+  //Auto-Scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages]);
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
@@ -313,7 +328,7 @@ export default function SessionPage() {
     <main className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
               KnowLink AI
@@ -333,9 +348,9 @@ export default function SessionPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-6 py-10">
+      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
         {/* Session Information */}
-        <h2 className="text-3xl font-bold text-gray-900">
+        <h2 className="wrap-break-word text-2xl font-bold text-gray-900 sm:text-3xl">
           {session.title}
         </h2>
 
@@ -353,7 +368,7 @@ export default function SessionPage() {
 
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {/* Sources */}
-          <div className="rounded-xl border bg-white p-6">
+          <div className="min-w-0 rounded-xl border bg-white p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">
                 Sources
@@ -466,7 +481,7 @@ export default function SessionPage() {
           </div>
 
           {/* AI Chat */}
-          <div className="rounded-xl border bg-white p-6 md:col-span-2">
+          <div className="min-w-0 rounded-xl border bg-white p-4 sm:p-6 md:col-span-2">
             {/* Chat Header */}
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">
@@ -505,8 +520,8 @@ export default function SessionPage() {
                     }
                     className={
                       message.role === "user"
-                        ? "ml-auto max-w-[80%] rounded-xl bg-black p-4 text-white"
-                        : "max-w-[80%] rounded-xl bg-gray-100 p-4 text-gray-900"
+                        ? "ml-auto w-fit max-w-[95%] wrap-break-word rounded-xl bg-black p-3 text-white sm:max-w-[85%] sm:p-4"
+                        : "w-fit max-w-[95%] wrap-break-word rounded-xl bg-gray-100 p-3 text-gray-900 sm:max-w-[85%] sm:p-4"
                     }
                   >
                     <p className="mb-1 text-xs font-semibold uppercase opacity-60">
@@ -565,6 +580,7 @@ export default function SessionPage() {
                   </div>
                 ))
               )}
+              <div ref={messagesEndRef} />
 
               {/* Thinking Indicator */}
               {askingQuestion && (
@@ -580,7 +596,7 @@ export default function SessionPage() {
                 event.preventDefault();
                 askQuestion();
               }}
-              className="mt-6 flex gap-3"
+              className="mt-6 flex flex-col gap-2 sm:flex-row sm:gap-3"
             >
               <input
                 type="text"
@@ -590,7 +606,7 @@ export default function SessionPage() {
                 }
                 placeholder="Ask a question about your sources..."
                 disabled={askingQuestion}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black disabled:bg-gray-100"
+                className="min-w-0 w-full flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black disabled:bg-gray-100"
               />
 
               <button
@@ -598,7 +614,7 @@ export default function SessionPage() {
                 disabled={
                   askingQuestion || !question.trim()
                 }
-                className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-lg bg-black px-5 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {askingQuestion ? "Asking..." : "Ask"}
               </button>
