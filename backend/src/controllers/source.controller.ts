@@ -22,10 +22,10 @@ export const createSource = async (
 
     const { sessionId, url } = req.body;
 
-    if (!sessionId || !url) {
+    if( typeof sessionId !== "string" || !sessionId.trim() || typeof url !== "string" || !url.trim()){
       res.status(400).json({
         success: false,
-        message: "sessionId and url are required",
+        message: "Valid sessionId and URL are required",
       });
       return;
     }

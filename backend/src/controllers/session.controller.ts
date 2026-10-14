@@ -19,13 +19,13 @@ export const createSession = async (
 
     const { title } = req.body;
 
-    if (!title || !title.trim()) {
+    if( typeof title !== "string" || !title.trim() || title.trim().length > 100){
       res.status(400).json({
         success: false,
-        message: "Session title is required",
+        message: "Session title must be between 1 and 100 characters",
       });
-      return;
-    }
+  return;
+}
 
     const session = await Session.create({
       userId: req.userId,
@@ -157,10 +157,10 @@ export const updateSession = async (
     const { id } = req.params;
     const { title } = req.body;
 
-    if (!title || !title.trim()) {
+    if( typeof title !== "string" || !title.trim() || title.trim().length > 100){
       res.status(400).json({
         success: false,
-        message: "Session title is required",
+        message: "Session title must be between 1 and 100 characters",
       });
       return;
     }

@@ -86,8 +86,14 @@ export const register = async (
       },
     });
   } catch (error) {
+    if(typeof error === "object" && error !== null && "code" in error && error.code === 11000){
+      res.status(409).json({
+        success: false,
+        message: "User already exists",
+      });
+      return;
+    }
     console.error("Register error:", error);
-
     res.status(500).json({
       success: false,
       message: "Internal server error",

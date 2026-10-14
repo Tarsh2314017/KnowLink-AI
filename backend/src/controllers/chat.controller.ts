@@ -20,10 +20,10 @@ export const askQuestion = async (
 
     const { sessionId, question } = req.body;
 
-    if (!sessionId || !question?.trim()) {
+    if(typeof sessionId !== "string" || !sessionId.trim() || typeof question !== "string" || !question.trim() || question.trim().length > 5000){
       res.status(400).json({
         success: false,
-        message: "sessionId and question are required",
+        message: "A valid sessionId and question (1–5000 characters) are required",
       });
       return;
     }

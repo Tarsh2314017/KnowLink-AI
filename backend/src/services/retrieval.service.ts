@@ -79,7 +79,8 @@ export const retrieveRelevantChunks = async (
     let matchedChunks = 0;
 
     for (const chunk of source.chunks) {
-      if (!chunk.embedding || chunk.embedding.length === 0) {
+      if( !chunk.embedding || chunk.embedding.length === 0 || !chunk.embedding.every((value) => Number.isFinite(value)) ||
+        !questionEmbedding.every((value) => Number.isFinite(value)) || chunk.embedding.length !== questionEmbedding.length){
         continue;
       }
 
